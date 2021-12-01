@@ -1,0 +1,49 @@
+<resources>
+    <string name="app_name">密码App</string>
+
+    <string name="hello_world">Hello worl!</string>
+    <string name="action_settings">Settings</string>
+    <string name="mode">运行模式</string>
+    <string name="rules">设置字段</string>
+    <string name="hello">选择工作模式</string>
+    <string name="chooseRules">选择规则类型</string>
+
+
+    <string name="enc">仅加密</string>
+    <string name="sign">仅签名</string>
+    <string name="encsign">同时加密签名</string>
+    <string name="confirm">确定</string>
+
+
+
+    <string name="tv1">字  段：</string>
+    <string name="tv2">密  码：</string>
+    <string name="tv3">类  型：</string>
+    <string name="tv4">是否有效：</string>
+    <string name="tv5">ID：</string>
+    <string name="tv6">查询结果：</string>
+
+
+    <string name="btn1">添加数据</string>
+    <string name="btn2">全部显示</string>
+    <string name="btn3">清除显示</string>
+    <string name="btn4">全部删除</string>
+
+    <string name="btn5">ID删除</string>
+    <string name="btn6">ID查询</string>
+    <string name="btn7">ID更新</string>
+
+    <string name="rb1">jsonenc</string>
+    <string name="rb2">jsonsign</string>
+    <string name="rb3">jsonreenc</string>
+    <string name="rb4">jsonresign</string>
+    <string name="rb5">formenc</string>
+    <string name="rb6">formsign</string>
+    <string name="rb7">formreenc</string>
+    <string name="rb8">formresign</string>
+
+
+
+
+
+</resources>

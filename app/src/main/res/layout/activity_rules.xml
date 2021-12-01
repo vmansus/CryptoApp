@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+    <RelativeLayout android:id="@+id/RelativeLayout01"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" >
+
+        <EditText
+            android:id="@+id/name"
+            android:layout_width="280dip"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginLeft="10dip"
+            android:layout_marginRight="83dp"
+            android:text=""></EditText>
+
+        <TextView android:id="@+id/name_label"
+            android:text="@string/tv1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_toRightOf="@id/name"
+            android:layout_alignBaseline="@+id/name">
+        </TextView>
+
+
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/RelativeLayout02"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <RadioGroup
+            android:id="@+id/RadioGroup01"
+            android:layout_width="450dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:orientation="vertical">
+
+
+            <RadioButton
+                android:id="@+id/RadioButton01"
+                android:layout_width="100dp"
+                android:layout_height="30dp"
+                android:checked="true"
+                android:text="@string/rb1"></RadioButton>
+
+            <RadioButton
+                android:id="@+id/RadioButton02"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="@string/rb2">
+            </RadioButton>
+
+            <RadioButton
+                android:id="@+id/RadioButton03"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="@string/rb3">
+            </RadioButton>
+
+            <RadioButton
+                android:id="@+id/RadioButton04"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="@string/rb4">
+            </RadioButton>
+
+
+
+            <RadioButton
+                android:id="@+id/RadioButton05"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="@string/rb5">
+            </RadioButton>
+
+            <RadioButton
+                android:id="@+id/RadioButton06"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="@string/rb6">
+            </RadioButton>
+
+            <RadioButton
+                android:id="@+id/RadioButton07"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="@string/rb7">
+            </RadioButton>
+
+            <RadioButton
+                android:id="@+id/RadioButton08"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="@string/rb8">
+            </RadioButton>
+
+        </RadioGroup>
+<!--        <TextView-->
+<!--            android:id="@+id/sexy_label"-->
+<!--            android:text="@string/tv3"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_alignParentLeft="true">-->
+<!--            &lt;!&ndash;android:layout_alignBaseline="@+id/sexy"-->
+<!--            android:layout_toRightOf="@id/sexy">&ndash;&gt;-->
+<!--        </TextView>-->
+    </RelativeLayout>
+
+    <LinearLayout android:id="@+id/LinearLayout02"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <Button android:id="@+id/add"
+            android:text="@string/btn1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding = "5dip"
+            android:layout_weight="1">
+        </Button>
+        <Button android:id="@+id/query_all"
+            android:text="@string/btn2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding = "5dip"
+            android:layout_weight="1">
+        </Button>
+        <Button android:id="@+id/clear"
+            android:text="@string/btn3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding = "5dip"
+            android:layout_weight="1">
+        </Button>
+        <Button	android:id="@+id/delete_all"
+            android:text="@string/btn4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding = "5dip"
+            android:layout_weight="1">
+        </Button>
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/LinearLayout03"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <TextView android:text="@string/tv5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding = "3dip">
+        </TextView>
+        <EditText android:id="@+id/id_entry"
+            android:layout_width="50dip"
+            android:layout_height="wrap_content"
+            android:padding = "3dip"
+            android:layout_weight="1">
+        </EditText>
+        <Button android:id="@+id/delete"
+            android:text="@string/btn5"
+            android:layout_width="50dip"
+            android:layout_height="wrap_content"
+            android:padding = "3dip"
+            android:layout_weight="1">
+        </Button>
+        <Button android:id="@+id/query"
+            android:text="@string/btn6"
+            android:layout_width="50dip"
+            android:layout_height="wrap_content"
+            android:padding = "3dip"
+            android:layout_weight="1">
+        </Button>
+        <Button android:id="@+id/update"
+            android:text="@string/btn7"
+            android:layout_width="50dip"
+            android:layout_height="wrap_content"
+            android:padding = "3dip"
+            android:layout_weight="1">
+        </Button>
+    </LinearLayout>
+
+    <TextView android:id="@+id/label"
+        android:text="@string/tv6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+    </TextView>
+    <ScrollView  android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+        <LinearLayout android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView android:id="@+id/display"
+                android:text=""
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+            </TextView>
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>
+
+
+
+    <!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:tools="http://schemas.android.com/tools"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="match_parent"-->
+<!--    android:layout_margin="14dp"-->
+<!--    android:orientation="vertical"-->
+<!--    tools:context=".RulesManagement"-->
+<!--    >-->
+
+<!--    <TextView-->
+<!--        android:id="@+id/myTextView"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/chooseRules"-->
+<!--        android:textSize="20sp" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/encryptlist_btn"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/encryptlist"-->
+<!--        android:layout_marginTop="10dp"-->
+<!--        android:layout_marginLeft="100dp"-->
+<!--        android:layout_marginRight="100dp"-->
+<!--        tools:layout_editor_absoluteX="0dp" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/signlist_btn"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/signlist"-->
+<!--        android:layout_marginTop="10dp"-->
+<!--        android:layout_marginLeft="100dp"-->
+<!--        android:layout_marginRight="100dp"-->
+<!--        tools:layout_editor_absoluteX="0dp" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/reenc_btn"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/reenc"-->
+<!--        android:layout_marginTop="10dp"-->
+<!--        android:layout_marginLeft="100dp"-->
+<!--        android:layout_marginRight="100dp"-->
+<!--        tools:layout_editor_absoluteX="0dp" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/resign_btn"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/resign"-->
+<!--        android:layout_marginTop="10dp"-->
+<!--        android:layout_marginLeft="100dp"-->
+<!--        android:layout_marginRight="100dp"-->
+<!--        tools:layout_editor_absoluteX="0dp" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/formenc_btn"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/formenc"-->
+<!--        android:layout_marginTop="20dp"-->
+<!--        android:layout_marginLeft="100dp"-->
+<!--        android:layout_marginRight="100dp"-->
+<!--        tools:layout_editor_absoluteX="0dp" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/formsign_btn"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/formsign"-->
+<!--        android:layout_marginTop="10dp"-->
+<!--        android:layout_marginLeft="100dp"-->
+<!--        android:layout_marginRight="100dp"-->
+<!--        tools:layout_editor_absoluteX="0dp" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/formreenc_btn"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/formreenc"-->
+<!--        android:layout_marginTop="10dp"-->
+<!--        android:layout_marginLeft="100dp"-->
+<!--        android:layout_marginRight="100dp"-->
+<!--        tools:layout_editor_absoluteX="0dp" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/formresign_btn"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/formresign"-->
+<!--        android:layout_marginTop="10dp"-->
+<!--        android:layout_marginLeft="100dp"-->
+<!--        android:layout_marginRight="100dp"-->
+<!--        tools:layout_editor_absoluteX="0dp" />-->
+
+<!--</LinearLayout>-->
+
