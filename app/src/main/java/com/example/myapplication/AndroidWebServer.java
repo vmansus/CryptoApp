@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 
 import com.alibaba.fastjson.JSONObject;
-import com.example.myapplication.smcipher.FormDataEnc;
+//import com.example.myapplication.smcipher.FormDataEnc;
 import com.example.myapplication.smcipher.JsonDecryptUtils;
 import com.example.myapplication.smcipher.JsonUtils;
 import com.squareup.okhttp.MediaType;
@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import fi.iki.elonen.NanoHTTPD;
+import lombok.SneakyThrows;
 
 public class AndroidWebServer extends NanoHTTPD {
 
@@ -43,6 +44,7 @@ public class AndroidWebServer extends NanoHTTPD {
         System.out.println("\nRunning! Point your browers to http://localhost:9000/ \n");
     }
 
+    @SneakyThrows
     @Override
     public Response serve(IHTTPSession session) {
 
@@ -96,15 +98,9 @@ public class AndroidWebServer extends NanoHTTPD {
             JSONObject requestbody = parseParms(session);
             String re = requestbody.toJSONString();
             System.out.println("re" + re);
-            String encryptrequest = "";
-            if (mode.equals("0")) {
-                encryptrequest = new JsonUtils().jsonEncrypt(re);
-            } else if (mode.equals("1")) {
-                encryptrequest = new JsonUtils().jsonEncryptmode1(re);
-            } else if (mode.equals("2")) {
-                encryptrequest = new JsonUtils().jsonEncryptmode2(re);
-            }
-//            String encryptrequest=new JsonUtils().jsonEncryptmode2(re);
+            String encryptrequest = new CryptoHandler().encRequest(re,"server cert","clientsignkey");
+
+
             System.out.println("encryptrequest" + encryptrequest);
 //           \
             response = newFixedLengthResponse(Response.Status.OK, "application/json;charset=utf-8", encryptrequest);
@@ -120,15 +116,9 @@ public class AndroidWebServer extends NanoHTTPD {
             JSONObject requestbody = parseParms(session);
             String re = requestbody.toJSONString();
             System.out.println("re" + re);
-            String decryptresponse = "";
-            if (mode.equals("0")) {
-                decryptresponse = new JsonDecryptUtils().jsonDecrypt(re);
-            } else if (mode.equals("1")) {
-                decryptresponse = new JsonDecryptUtils().jsonDecryptmode1(re);
-            } else if (mode.equals("2")) {
-                decryptresponse = new JsonDecryptUtils().jsonDecryptmode2(re);
-            }
-//            String decryptresponse=new JsonDecryptUtils().jsonDecryptmode2(re);
+            String decryptresponse = new CryptoHandler().decResponse(re);
+
+
             System.out.println("decryptresponse" + decryptresponse);
 
             response = newFixedLengthResponse(Response.Status.OK, "application/json;charset=utf-8", decryptresponse);
@@ -140,25 +130,25 @@ public class AndroidWebServer extends NanoHTTPD {
 
 
         } else if (session.getUri().contains("/encForm")) {
-            Map<String, String> parms = new HashMap<>();
-            try {
-                session.parseBody(new HashMap());
-                parms = session.getParms();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ResponseException e) {
-                e.printStackTrace();
-            }
-            try {
-                String encryptrequest = new FormDataEnc().FormDataEnc(parms);
-                response = newFixedLengthResponse(Response.Status.OK, "application/json;charset=utf-8", encryptrequest);
-                response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, HEAD,OPTIONS");
-                response.addHeader("Access-Control-Allow-Credentials", "true");
-                response.addHeader("Access-Control-Allow-Origin", "*");
-                response.addHeader("Access-Control-Allow-Headers", " X-Requested-With,Content-Type,accept");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+//            Map<String, String> parms = new HashMap<>();
+//            try {
+//                session.parseBody(new HashMap());
+//                parms = session.getParms();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } catch (ResponseException e) {
+//                e.printStackTrace();
+//            }
+//            try {
+//                String encryptrequest = new FormDataEnc().FormDataEnc(parms);
+//                response = newFixedLengthResponse(Response.Status.OK, "application/json;charset=utf-8", encryptrequest);
+//                response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, HEAD,OPTIONS");
+//                response.addHeader("Access-Control-Allow-Credentials", "true");
+//                response.addHeader("Access-Control-Allow-Origin", "*");
+//                response.addHeader("Access-Control-Allow-Headers", " X-Requested-With,Content-Type,accept");
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
 
 
         } else if (session.getUri().contains("/decForm")) {

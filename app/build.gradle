@@ -60,7 +60,8 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     compile 'org.nanohttpd:nanohttpd:2.2.0'
-    implementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.57'
+    implementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.68'
+    implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.68'
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.9'
 
 //    compile 'org.springframework.boot:spring-boot-starter:2.3.4.RELEASE'

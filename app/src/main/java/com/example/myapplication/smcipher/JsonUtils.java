@@ -4,28 +4,76 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.JSONValidator;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.example.myapplication.smcipher.sm2.SM2SignVO;
-import com.example.myapplication.smcipher.sm2.SM2SignVerUtils;
-import com.example.myapplication.smcipher.sm2.SM2test;
-import com.example.myapplication.smcipher.sm4.SM4Utils;
+import com.example.myapplication.MainActivity;
+import com.example.myapplication.MyApplication;
+import com.example.myapplication.PropertiesUtils;
+import com.example.myapplication.gmhelper.SM2Util;
+import com.example.myapplication.gmhelper.SM4Util;
+import com.example.myapplication.gmhelper.cert.SM2X509CertMaker;
+
+//import com.example.myapplication.smcipher.sm4.SM4Utils;
 import lombok.var;
 import org.apache.commons.lang.StringUtils;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Component;
 
 
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.Security;
+import java.security.Signature;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.*;
 
-@Component
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
+//@Component
 public class JsonUtils {
 
 
 
-    public static final String privateKey = "53cb2ba32c6e8389709ab7b3db297f7374075214d303bd48a1e7457faf1dfc0c";
-    public static final String publicKey = "043d6a94d8bf6ecba363e0cee4302d372ddf3737bfc2cb6b4afb761463dcecbcae949999db1cbc1d7c903fbb2a52d49a4915bd6e3c57efce5bec65100d90c557cf";
+    static {
+        Security.removeProvider("SunEC");
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
-    String sm4key= UUID.randomUUID().toString().replace("-", "");
+    private static final char[] TEST_P12_PASSWD="12345678".toCharArray();
 
-    String signstr;
+//    private static final String TEST_P12_FILENAME="C:\\Users\\20781\\AndroidStudioProjects\\MyApplication\\app\\src\\main\\res\\clientkeystore.p12";
+
+
+    private static JsonUtils instance=null;
+    private Key keyEncryptKey=null;
+
+
+    public JsonUtils(X509Certificate certificate) throws NoSuchProviderException, NoSuchAlgorithmException {
+        keyEncryptKey=certificate.getPublicKey();
+    }
+
+    public  static  JsonUtils getInstance(X509Certificate certificate) throws Exception{
+        if (instance==null)return new JsonUtils(certificate);
+        else return instance;
+    }
+
+    byte[] sm4key= SM4Util.generateKey();
+
+
 
 
     NodeMap nodeMap=new NodeMap();
@@ -41,42 +89,39 @@ public class JsonUtils {
      * @param text 入参
      * @return 加密字符串
      */
-    public String stringEncrypt(String text) {
-        SM4Utils sm4 = new SM4Utils();
-        sm4.secretKey = sm4key;
-        sm4.hexString = true;
-        sm4.iv = "31313131313131313131313131313131";
-        String cipherText = sm4.encryptData_CBC(text);
-        return cipherText;
-//        try {
-//            if (!StringUtils.isBlank(text)) {
-//                text = AES.encryptToBase64(ConvertUtils.stringToHexString(text), aesKey);
-//            }
-//        } catch (Exception e) {
-//            text = "文本加密异常:" + e.getMessage() + "加密前信息：" + text;
-//        }
-//        return text;
+    public String stringEncrypt(String text) throws NoSuchPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, InvalidKeyException, BadPaddingException, InvalidKeyException, IllegalBlockSizeException {
+        byte[] iv=Base64.getDecoder().decode(stringToBytes("LvbTKayS1A2NFFBjaPvkJg=="));
+        byte[] srcdata=text.getBytes();
+        byte[] cipherText= SM4Util.encrypt_CBC_Padding(sm4key,iv,srcdata);
+        String ss=bytesToString(Base64.getEncoder().encode(cipherText));
+        return ss;
     }
 
-    public String stringSign(String text) throws Exception {
-        String aa= Util.byteToHex(text.getBytes());
-//        String sign=RSA.sign(text,privateKey);
-//        return sign;
-        SM2SignVO sign = genSM2Signature(privateKey, aa);
-        return sign.getSm2_signForSoft();
+    public String stringSign(String text, String alias) throws Exception {
+        KeyStore  ks= PropertiesUtils.getkeyStore(MyApplication.getContext());
+        PrivateKey privateKey=(BCECPrivateKey)ks.getKey(alias,TEST_P12_PASSWD);
 
+        byte[] srcData = text.getBytes();
+        Signature sign = Signature.getInstance(SM2X509CertMaker.SIGN_ALGO_SM3WITHSM2, "BC");
+        sign.initSign(privateKey);
+        sign.update(srcData);
+        byte[] signatureValue = sign.sign();
+
+        return bytesToString(Base64.getEncoder().encode(signatureValue));
     }
 
-    //私钥签名,参数二:原串必须是hex!!!!因为是直接用于计算签名的,可能是SM3串,也可能是普通串转Hex
-    public static SM2SignVO genSM2Signature(String priKey, String sourceData) throws Exception {
-        SM2SignVO sign = SM2SignVerUtils.Sign2SM2(Util.hexToByte(priKey), Util.hexToByte(sourceData));
-        return sign;
+    public static String Sm2Enc(byte[] srcData,Key publickey) throws InvalidCipherTextException {
+        byte[] ciperdata= SM2Util.encrypt((BCECPublicKey) publickey,srcData);
+        String ss=bytesToString(Base64.getEncoder().encode(ciperdata));
+        return ss;
     }
 
-    //公钥验签,参数二:原串必须是hex!!!!因为是直接用于计算签名的,可能是SM3串,也可能是普通串转Hex
-    public static boolean verifySM2Signature(String pubKey, String sourceData, String hardSign) {
-        SM2SignVO verify = SM2SignVerUtils.VerifySignSM2(Util.hexStringToBytes(pubKey), Util.hexToByte(sourceData), Util.hexToByte(hardSign));
-        return verify.isVerify();
+
+    public java.security.cert.Certificate[] getCerts(String alias) throws Exception{
+        KeyStore  ks= PropertiesUtils.getkeyStore(MyApplication.getContext());
+        Certificate[] certificates=ks.getCertificateChain(alias);
+        return certificates;
+
     }
 
     /**
@@ -85,27 +130,35 @@ public class JsonUtils {
      * @param json 入参
      * @return 加密字符串
      */
-    public String jsonEncrypt(String json) {
+    public String  jsonEncrypt(String json,String keyname,String alias) {
 
         String json2 = "";
+        System.out.println(json);
         try {
             if (!StringUtils.isBlank(json)) {
                 for (String key :  encryptNodeMap.keySet()){
-//                    System.out.println(encryptNodeMap.get(key));
-                    GetJsonSign(JSON.parseObject(json.trim()), signNodeMap.get(key));
-                   String  output = GetAesJToken(JSON.parseObject(json.trim()), encryptNodeMap.get(key)).toString();
+                    GetJsonSign(JSON.parseObject(json.trim()), signNodeMap.get(key),alias);
+                    String  output = GetAesJToken(JSON.parseObject(json.trim()), encryptNodeMap.get(key)).toString();
 
                     Map<String, Object> signature =this.signedmap;
-//                    GetAesJToken(JSON.parseObject(json.trim()), encryptNodeMap.get(key)).si
                     String encryptkey = null;
                     try {
-                        encryptkey = SM2test.SM2Enc(publicKey,sm4key);
-//                        System.out.println(encryptkey);
+                        encryptkey = Sm2Enc(sm4key,keyEncryptKey);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     JSONObject jsonObject = JSON.parseObject(output);
-                    jsonObject.put("encryptkey",encryptkey);
+                    jsonObject.put("Encrypted_Key",encryptkey);
+                    jsonObject.put("KeyName",keyname);
+
+                    JSONObject jsonChainCert=new JSONObject();
+                    for (int i=0;i<getCerts(alias).length;i++){
+                        jsonChainCert.put(String.valueOf(i),bytesToString(Base64.getEncoder().encode(getCerts(alias)[i].getEncoded())));
+                    }
+
+//                    X509Certificate cert= (X509Certificate) getCerts(alias)[0];
+                    jsonObject.put("Certs",jsonChainCert);
+
                     String result=JSONObject.toJSONString(jsonObject, SerializerFeature.SortField.MapSortField);
 //                    System.out.println(result);
                     //1、迭代器
@@ -119,7 +172,7 @@ public class JsonUtils {
 
 //                        System.out.println(key1 + " ：" + value);
                     }
-                  json2=getJsonNew(result,signature);
+                    json2=getJsonNew(result,signature);
 //                    System.out.println(result);
                 }
             }
@@ -131,26 +184,25 @@ public class JsonUtils {
         return json2;
     }
 
-    public String jsonEncryptmode1(String json) {
+    public String  jsonEncryptmode1(String json,String keyname,String alias) {
 
         String json2 = "";
         try {
             if (!StringUtils.isBlank(json)) {
                 for (String key :  encryptNodeMap.keySet()){
 //                    System.out.println(encryptNodeMap.get(key));
-                    GetJsonSign(JSON.parseObject(json.trim()), signNodeMap.get(key));
+                    GetJsonSign(JSON.parseObject(json.trim()), signNodeMap.get(key),alias);
                     String  output = GetAesJToken(JSON.parseObject(json.trim()), encryptNodeMap.get(key)).toString();
                     String encryptkey = null;
                     try {
-                        encryptkey = SM2test.SM2Enc(publicKey,sm4key);
-//                        System.out.println(encryptkey);
+                        encryptkey = Sm2Enc(sm4key,keyEncryptKey);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     JSONObject jsonObject = JSON.parseObject(output);
-                    jsonObject.put("encryptkey",encryptkey);
+                    jsonObject.put("Encrypted_Key",encryptkey);
+                    jsonObject.put("KeyName",keyname);
                     String result=JSONObject.toJSONString(jsonObject, SerializerFeature.SortField.MapSortField);
-
                     json2=result;
                 }
             }
@@ -162,29 +214,38 @@ public class JsonUtils {
         return json2;
     }
 
-    public String jsonEncryptmode2(String json) {
+    public String  jsonEncryptmode2(String json,String keyname,String alias) {
 
         String json2 = "";
         try {
             if (!StringUtils.isBlank(json)) {
                 for (String key :  encryptNodeMap.keySet()){
 //                    System.out.println(encryptNodeMap.get(key));
-                    GetJsonSign(JSON.parseObject(json.trim()), signNodeMap.get(key));
-                    String  output = GetAesJToken(JSON.parseObject(json.trim()), encryptNodeMap.get(key)).toString();
+                    GetJsonSign(JSON.parseObject(json.trim()), signNodeMap.get(key),alias);
+                    //String  output = GetAesJToken(JSON.parseObject(json.trim()), encryptNodeMap.get(key)).toString();
 
                     Map<String, Object> signature =this.signedmap;
 //                    GetAesJToken(JSON.parseObject(json.trim()), encryptNodeMap.get(key)).si
                     // 使用RSA算法将随机生成的AESkey加密
                     String encryptkey = null;
                     try {
-                        encryptkey = SM2test.SM2Enc(publicKey,sm4key);
+                        encryptkey = Sm2Enc(sm4key,keyEncryptKey);
 //                        System.out.println(encryptkey);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     JSONObject jsonObject = JSON.parseObject(json);
+
+                    JSONObject jsonChainCert=new JSONObject();
+                    for (int i=0;i<getCerts(alias).length;i++){
+                        jsonChainCert.put(String.valueOf(i),bytesToString(Base64.getEncoder().encode(getCerts(alias)[i].getEncoded())));
+                    }
+//                    X509Certificate cert= (X509Certificate) getCerts(alias)[0];
+                    jsonObject.put("Certs",jsonChainCert);
+
 //                    jsonObject.put("encryptkey",encryptkey);
                     String result=JSONObject.toJSONString(jsonObject, SerializerFeature.SortField.MapSortField);
+//                    System.out.println(result);
 
                     json2=getJsonNew(result,signature);
                 }
@@ -197,8 +258,10 @@ public class JsonUtils {
         return json2;
     }
 
+
+
     public static String getJsonNew (String jsonStrO , Map<String ,Object> map){
-        if(org.apache.commons.lang.StringUtils.isBlank(jsonStrO)){
+        if(StringUtils.isBlank(jsonStrO)){
             jsonStrO = "{}";
         }
 
@@ -227,7 +290,7 @@ public class JsonUtils {
      * @param nodeList 入参
      * @return 结果
      */
-    public Object GetAesJToken(Object object, List<String> nodeList) {
+    public Object GetAesJToken(Object object, List<String> nodeList) throws NoSuchPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, InvalidKeyException {
 
 
         // 如果为空，直接返回
@@ -285,7 +348,7 @@ public class JsonUtils {
     }
 
 
-    public Object  GetJsonSign(Object object, List<String> nodeList) throws Exception {
+    public Object  GetJsonSign(Object object, List<String> nodeList,String alias) throws Exception {
         Map<String, Object> signmap=new HashMap();
         // 如果为空，直接返回
         if (object == null || nodeList.size() == 0) return null;
@@ -306,7 +369,7 @@ public class JsonUtils {
             } else {
                 //object = JsonNodeToAes(object, node);
 
-                object=JsonNodeSign(object, node);
+                object=JsonNodeSign(object, node,alias);
 
             }
         }
@@ -321,7 +384,7 @@ public class JsonUtils {
                 ) {
                     var jObject = JSON.parseObject(object.toString());
                     if (jObject.get(key) != null) {
-                        jObject.put(key, GetJsonSign(jObject.get(key), deepLevelNodes.get(key)));
+                        jObject.put(key, GetJsonSign(jObject.get(key), deepLevelNodes.get(key),alias));
                     }
                     object = jObject;
                 }
@@ -332,7 +395,7 @@ public class JsonUtils {
                     for (int i = 0; i < jArray.size(); i++) {
                         JSONObject curObject = jArray.getJSONObject(i);
                         if (curObject != null && curObject.get(key) != null) {
-                            jArray.set(i, GetJsonSign(curObject.get(key), deepLevelNodes.get(key)));
+                            jArray.set(i, GetJsonSign(curObject.get(key), deepLevelNodes.get(key),alias));
                         }
                     }
                     object = jArray;
@@ -350,15 +413,15 @@ public class JsonUtils {
      * @param node   入参
      * @return 结果
      */
-    private Object JsonNodeToAes(Object object, String node) {
+    private Object JsonNodeToAes(Object object, String node) throws NoSuchPaddingException, InvalidKeyException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, InvalidAlgorithmParameterException {
         if (object == null) return object;
         if (JSONValidator.from(object.toString()).getType()==JSONValidator.Type.Object
-               // JSON.isValidObject(object.toString())
+            // JSON.isValidObject(object.toString())
         ) {
             var jObject = JSON.parseObject(object.toString());
             if (jObject.get(node) != null) {
                 if (JSONValidator.from(jObject.get(node).toString()).getType()==JSONValidator.Type.Array
-                        //JSON.isValidArray(jObject.get(node).toString())
+                    //JSON.isValidArray(jObject.get(node).toString())
                 ) {
                     var jArray = jObject.getJSONArray(node);
                     for (int i = 0; i < jArray.size(); i++) {
@@ -377,7 +440,7 @@ public class JsonUtils {
             object = jObject;
         } else if (
                 JSONValidator.from(object.toString()).getType()==JSONValidator.Type.Array
-                //JSON.isValidArray(object.toString())
+            //JSON.isValidArray(object.toString())
         ) {
             var jArray = JSON.parseArray(object.toString());
             for (int i = 0; i < jArray.size(); i++) {
@@ -401,7 +464,7 @@ public class JsonUtils {
      * @param node   入参
      * @return 结果
      */
-    private Object JsonNodeSign(Object object, String node) throws Exception {
+    private Object JsonNodeSign(Object object, String node,String alias) throws Exception {
         if (object == null) return null;
 
         if (JSONValidator.from(object.toString()).getType()==JSONValidator.Type.Object
@@ -417,7 +480,7 @@ public class JsonUtils {
                         jArray.set(i, jArray.get(i).toString());
 
                         String tmp=JSONObject.toJSONString(jArray.get(i),SerializerFeature.SortField.MapSortField);
-                        this.signedmap.put(node, stringSign(tmp));
+                        this.signedmap.put(node, stringSign(tmp,alias));
 
 //                        this.signedmap.put(node, stringSign(jArray.get(i).toString()));
                     }
@@ -426,11 +489,11 @@ public class JsonUtils {
 //                    if (JSONValidator.from(jObject.get(node).toString()).getType()!=JSONValidator.Type.Object    //非
 //                    //!JSON.isValidObject(jObject.get(node).toString())
 //                )
-                    {
+                {
                     jObject.put(node, jObject.get(node).toString());
 
                     String tmp=JSONObject.toJSONString(jObject.get(node),SerializerFeature.SortField.MapSortField);
-                    this.signedmap.put(node, stringSign(tmp));
+                    this.signedmap.put(node, stringSign(tmp,alias));
 
 //                    this.signedmap.put(node, stringSign(jObject.get(node).toString()));
                 }
@@ -444,7 +507,7 @@ public class JsonUtils {
             for (int i = 0; i < jArray.size(); i++) {
                 Object curObject = jArray.getJSONObject(i);
                 if (curObject != null) {
-                    jArray.set(i, JsonNodeSign(curObject, node));
+                    jArray.set(i, JsonNodeSign(curObject, node,alias));
                 }
             }
             object = jArray;
@@ -453,7 +516,7 @@ public class JsonUtils {
             object = object.toString();
 
             String tmp=JSONObject.toJSONString(object,SerializerFeature.SortField.MapSortField);
-            this.signedmap.put(node, stringSign(tmp));
+            this.signedmap.put(node, stringSign(tmp,alias));
 
 //            this.signedmap.put(node,object.toString());
         }
@@ -465,7 +528,24 @@ public class JsonUtils {
     }
 
 
+    public static byte[] stringToBytes(String str) {
+        try {
+            // 使用指定的字符集将此字符串编码为byte序列并存到一个byte数组中
+            return str.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-
+    public static String bytesToString(byte[] bs) {
+        try {
+            // 通过指定的字符集解码指定的byte数组并构造一个新的字符串
+            return new String(bs, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
 }
