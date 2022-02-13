@@ -5,6 +5,7 @@
     <string name="action_settings">Settings</string>
     <string name="mode">运行模式</string>
     <string name="rules">设置字段</string>
+    <string name="download">配置下载</string>
     <string name="hello">选择工作模式</string>
     <string name="chooseRules">选择规则类型</string>
 

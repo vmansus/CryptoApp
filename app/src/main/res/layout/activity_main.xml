@@ -8,28 +8,59 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+<!--    <EditText-->
+<!--        android:id="@+id/inputUrl"-->
+<!--        android:layout_margin="10dp"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content" />-->
 
-    <Button
-        android:id="@+id/mode_btn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/mode"
-        android:layout_marginTop="200dp"
-        android:layout_marginLeft="100dp"
-        android:layout_marginRight="100dp"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="185dp" />
+<!--    <Button-->
+<!--        android:id="@+id/buttonDownload"-->
+<!--        android:layout_below="@+id/inputUrl"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="DOWNLOAD"/>-->
 
-    <Button
-        android:id="@+id/rules_btn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/rules"
-        android:layout_marginTop="50dp"
-        android:layout_marginLeft="100dp"
-        android:layout_marginRight="100dp"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="242dp" />
+<!--    <Button-->
+<!--        android:id="@+id/cancelDownload"-->
+<!--        android:layout_below="@+id/buttonDownload"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="CANCEL"/>-->
+
+<!--    <Button-->
+<!--        android:id="@+id/mode_btn"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/mode"-->
+<!--        android:layout_marginTop="200dp"-->
+<!--        android:layout_marginLeft="100dp"-->
+<!--        android:layout_marginRight="100dp"-->
+<!--        tools:layout_editor_absoluteX="0dp"-->
+<!--        tools:layout_editor_absoluteY="185dp" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/rules_btn"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/rules"-->
+<!--        android:layout_marginTop="50dp"-->
+<!--        android:layout_marginLeft="100dp"-->
+<!--        android:layout_marginRight="100dp"-->
+<!--        tools:layout_editor_absoluteX="0dp"-->
+<!--        tools:layout_editor_absoluteY="242dp" />-->
+
+
+<!--    <Button-->
+<!--        android:id="@+id/download_btn"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/download"-->
+<!--        android:layout_marginTop="200dp"-->
+<!--        android:layout_marginLeft="100dp"-->
+<!--        android:layout_marginRight="100dp"-->
+<!--        tools:layout_editor_absoluteX="0dp"-->
+<!--        tools:layout_editor_absoluteY="185dp" />-->
 
 
 

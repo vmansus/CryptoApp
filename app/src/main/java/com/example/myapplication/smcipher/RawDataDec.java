@@ -1,6 +1,8 @@
 package com.example.myapplication.smcipher;
 
+import com.alibaba.fastjson.JSONObject;
 import com.example.myapplication.CryptoConfigUtils;
+import com.example.myapplication.JsoupConfig;
 import com.example.myapplication.MyApplication;
 import com.example.myapplication.PropertiesUtils;
 import com.example.myapplication.gmhelper.SM2Util;
@@ -13,14 +15,14 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
@@ -35,7 +37,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -47,7 +49,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-public class FormDataDec {
+public class RawDataDec {
     static {
         Security.removeProvider("SunEC");
         Security.addProvider(new BouncyCastleProvider());
@@ -60,174 +62,14 @@ public class FormDataDec {
     String zuckey=null;
     byte[] sm4key = null;
 
-    NodeMap nodeMap=new NodeMap();
-    List<String> formenc=nodeMap.formreenc();
-    List<String> formsign=nodeMap.formresign();
-
-    public FormDataDec() throws IOException {
+    public RawDataDec() throws IOException {
     }
 
-
-    public  Map FormDataDec(Map<String, String> map) throws Exception {
-        boolean checksign=true;
-        String encryptkey=map.get("Encrypted_Key");
-        System.out.println(encryptkey);
-        String keyname=map.get("KeyName");
-        System.out.println(keyname);
-        PrivateKey privateKey=getPrivateKey(keyname);
-        byte[] thekey = null;
-        try {
-            thekey= Sm2Dec(encryptkey,privateKey);
-            if (encalg==0){
-                this.sm4key=thekey;
-            }else if(encalg==1){
-                this.zuckey=bytesToString(thekey);
-            }else {
-                System.out.println("请检查对称加密配置!!!");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        map.remove("Encrypted_Key");
-        map.remove("KeyName");
-        ArrayList arrayList=new ArrayList();
-        List<X509Certificate> certificates = new ArrayList<>();
-        Iterator<Map.Entry<String, String>> it = map.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, String> entry = it.next();
-            if(formenc.contains(entry.getKey())){
-                entry.setValue(stringDecrypt(entry.getValue()));
-            }
-            if(entry.getKey().contains("cert")){
-                CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-                byte[] certbcytes=Base64.getDecoder().decode(stringToBytes(entry.getValue().toString()));
-                Certificate cert = certFactory.generateCertificate(new ByteArrayInputStream(certbcytes));
-                certificates.add((X509Certificate) cert);
-                arrayList.add(entry.getKey());
-//                map.remove(entry.getKey());
-            }
-        }
-
-        for(Object string:arrayList){
-            map.remove(string);
-        }
-        Certificate[] sortedChain=new Certificate[certificates.size()];
-        X509Certificate rootCert=findRootCert(certificates);
-        X509Certificate nextCert=rootCert;
-        for (int p=certificates.size()-1;p>=0;p--){
-            sortedChain[p]=nextCert;
-            nextCert=findSignedCert(nextCert,certificates);
-        }
-
-        Boolean certStatus=checkCertChain(sortedChain);
-        if (!certStatus){
-            System.out.println("证书链验证失败!!!");
-        }
-        final X509Certificate x509Certificate=(X509Certificate)sortedChain[0];
-        ArrayList signList=new ArrayList();
-        Iterator<Map.Entry<String, String>> signEntry = map.entrySet().iterator();
-        while(signEntry.hasNext()){
-            Map.Entry<String, String> entry = signEntry.next();
-            if(entry.getKey().contains("-sig")){
-                String s=entry.getKey().substring(0,entry.getKey().length()-4);
-                if(!validate(map.get(s),entry.getValue(),x509Certificate)){
-                    checksign=false;
-                    System.out.println(s+"验签失败！！！");
-                }
-                signList.add(entry.getKey());
-//                map.remove(entry.getKey());
-            }
-        }
-        for(Object string:signList){
-            map.remove(string);
-        }
-
-        System.out.println("验签结果:"+checksign);
-        return map;
+    public static byte[] Sm2Dec(String text, PrivateKey privateKey) throws InvalidCipherTextException {
+        byte[] aa= Base64.getDecoder().decode(stringToBytes(text));
+        byte[] decryptdata= SM2Util.decrypt((BCECPrivateKey)privateKey,aa);
+        return decryptdata;
     }
-
-    public  Map FormDataDec1(Map<String, String> map) throws Exception {
-        String encryptkey=map.get("Encrypted_Key");
-        String keyname=map.get("KeyName");
-        PrivateKey privateKey=getPrivateKey(keyname);
-        byte[] thekey = null;
-        try {
-            thekey= Sm2Dec(encryptkey,privateKey);
-            if (encalg==0){
-                this.sm4key=thekey;
-            }else if(encalg==1){
-                this.zuckey=bytesToString(thekey);
-            }else {
-                System.out.println("请检查对称加密配置!!!");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        map.remove("Encrypted_Key");
-        map.remove("KeyName");
-        List<X509Certificate> certificates = new ArrayList<>();
-        Iterator<Map.Entry<String, String>> it = map.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, String> entry = it.next();
-            if(formenc.contains(entry.getKey())){
-                entry.setValue(stringDecrypt(entry.getValue()));
-            }
-        }
-        return map;
-    }
-
-    public  Map FormDataDec2(Map<String, String> map) throws Exception {
-        boolean checksign=true;
-        List<X509Certificate> certificates = new ArrayList<>();
-        Iterator<Map.Entry<String, String>> it = map.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, String> entry = it.next();
-            if(formenc.contains(entry.getKey())){
-                entry.setValue(stringDecrypt(entry.getValue()));
-            }
-            if(entry.getKey().contains("cert")){
-                CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-                byte[] certbcytes=Base64.getDecoder().decode(stringToBytes(entry.getValue().toString()));
-                Certificate cert = certFactory.generateCertificate(new ByteArrayInputStream(certbcytes));
-                certificates.add((X509Certificate) cert);
-                map.remove(entry.getKey());
-            }
-        }
-
-        Certificate[] sortedChain=new Certificate[certificates.size()];
-        X509Certificate rootCert=findRootCert(certificates);
-        X509Certificate nextCert=rootCert;
-        for (int p=certificates.size()-1;p>=0;p--){
-            sortedChain[p]=nextCert;
-            nextCert=findSignedCert(nextCert,certificates);
-        }
-
-        Boolean certStatus=checkCertChain(sortedChain);
-        if (!certStatus){
-            System.out.println("证书链验证失败!!!");
-        }
-        final X509Certificate x509Certificate=(X509Certificate)sortedChain[0];
-
-        Iterator<Map.Entry<String, String>> signEntry = map.entrySet().iterator();
-        while(signEntry.hasNext()){
-            Map.Entry<String, String> entry = signEntry.next();
-            if(entry.getKey().contains("-sig")){
-                String s=entry.getKey().substring(0,entry.getKey().length()-4);
-                if(!validate(map.get(s),entry.getValue(),x509Certificate)){
-                    checksign=false;
-                    System.out.println(s+"验签失败！！！");
-                }
-                map.remove(entry.getKey());
-            }
-        }
-
-        System.out.println("验签结果:"+checksign);
-        return map;
-    }
-
-
-
-
 
     public String stringDecrypt(String text) throws BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException, NoSuchProviderException, InvalidKeyException, UnsupportedEncodingException {
         if(encalg==0){
@@ -243,17 +85,6 @@ public class FormDataDec {
             return null;
         }
     }
-
-    public static String removeCharAt(String s, int pos) {
-        return s.substring(0, pos) + s.substring(pos + 1);
-    }
-
-    public static byte[] Sm2Dec(String text, PrivateKey privateKey) throws InvalidCipherTextException {
-        byte[] aa=Base64.getDecoder().decode(stringToBytes(text));
-        byte[] decryptdata= SM2Util.decrypt((BCECPrivateKey)privateKey,aa);
-        return decryptdata;
-    }
-
 
     public boolean validate(String text, String signaturevalue, X509Certificate cert) throws Exception {
         byte[] temp=Base64.getDecoder().decode(stringToBytes(signaturevalue));
@@ -286,14 +117,8 @@ public class FormDataDec {
         return privateKey;
 
     }
-
     public static byte[] stringToBytes(String str) {
         try {
-
-            //出现bug 并解决
-            //在使用BASE64字符串作为参数在传递的时候，其中的“+”会被解析成空格，这在解码的时候会出现问题，在解析前将空格重新替换成“+”即可。
-            //参考https://blog.csdn.net/qq_35540187/article/details/115209070
-            str = str.replaceAll(" ", "+");
             // 使用指定的字符集将此字符串编码为byte序列并存到一个byte数组中
             return str.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -311,6 +136,7 @@ public class FormDataDec {
         }
         return null;
     }
+
 
     private static X509Certificate findSignedCert(X509Certificate signingCert, List<X509Certificate> certificates)
     {
@@ -379,5 +205,154 @@ public class FormDataDec {
             }
         }
         return isValidCertChain;
+    }
+
+    public String decWholeHtml(String encryptedHtml) throws Exception {
+        boolean checksign=true;
+        String html=bytesToString(Base64.getDecoder().decode(stringToBytes(encryptedHtml)));
+        System.out.println("tessss::::::::"+html);
+        Document doc= Jsoup.parse(html);
+        Elements element=doc.select("div[id=encryptedHtml]");
+        Elements element1=doc.select("div[id=Encrypted_Key]");
+        Elements element2=doc.select("div[id=SignValue]");
+        Elements element3=doc.select("div[id=KeyName]");
+        Elements element4=doc.select("div[id=Certs]");
+        String signValue=element2.text();
+        String encKey=element1.text();
+        String encHtml=element.text();
+        String keyname=element3.text();
+        String certs=element4.text();
+
+        PrivateKey privateKey=getPrivateKey(keyname);
+        byte[] thekey = null;
+        try {
+            thekey= Sm2Dec(encKey,privateKey);
+            if (encalg==0){
+                this.sm4key=thekey;
+            }else if(encalg==1){
+                this.zuckey=bytesToString(thekey);
+            }else {
+                System.out.println("请检查对称加密配置!!!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        JSONObject certObject=JSONObject.parseObject(certs);
+        Iterator certiter = certObject.entrySet().iterator();
+        X509Certificate[] chain=new X509Certificate[certObject.size()];
+        int j=0;
+        while(certiter.hasNext()){
+            Map.Entry entry = (Map.Entry) certiter.next();
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            byte[] certbcytes=Base64.getDecoder().decode(stringToBytes(entry.getValue().toString()));
+            Certificate cert = certFactory.generateCertificate(new ByteArrayInputStream(certbcytes));
+            chain[j]=(X509Certificate) cert;
+            j++;
+        }
+        List<X509Certificate> certificates= Arrays.asList(chain);
+        Certificate[] sortedChain=new Certificate[certificates.size()];
+        X509Certificate rootCert=findRootCert(certificates);
+        X509Certificate nextCert=rootCert;
+        for (int p=certificates.size()-1;p>=0;p--){
+            sortedChain[p]=nextCert;
+            nextCert=findSignedCert(nextCert,certificates);
+        }
+        Boolean certStatus=checkCertChain(sortedChain);
+        if (!certStatus){
+            System.out.println("证书链验证失败!!!");
+        }
+        final X509Certificate x509Certificate=(X509Certificate)sortedChain[0];
+        String plainText=stringDecrypt(encHtml);
+        checksign=validate(plainText,signValue,x509Certificate);
+        System.out.println("验签结果为："+checksign);
+        return plainText;
+    }
+
+    public String decPartHtml(String encryptedHtml) throws Exception {
+        System.out.println("231231");
+        org.dom4j.Document config=PropertiesUtils.getHtmlConfig(MyApplication.getContext());
+        List<String> encElements=new JsoupConfig().slectEncElements(config);
+        List<String> sigElements=new JsoupConfig().slectSigElements(config);
+        boolean checksign=true;
+        String html=bytesToString(Base64.getDecoder().decode(stringToBytes(encryptedHtml)));
+        System.out.println("tespart::::::::"+html);
+        Document doc= Jsoup.parse(html);
+
+        Elements encKeyElement=doc.select("div[id=Encrypted_Key]");
+        Elements keyNameElement=doc.select("div[id=KeyName]");
+        Elements certsElement=doc.select("div[id=Certs]");
+        String encKey=encKeyElement.text();
+        String keyname=keyNameElement.text();
+        String certs=certsElement.text();
+
+        PrivateKey privateKey=getPrivateKey(keyname);
+        byte[] thekey = null;
+        try {
+            thekey= Sm2Dec(encKey,privateKey);
+            if (encalg==0){
+                this.sm4key=thekey;
+            }else if(encalg==1){
+                this.zuckey=bytesToString(thekey);
+            }else {
+                System.out.println("请检查对称加密配置!!!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        JSONObject certObject=JSONObject.parseObject(certs);
+        Iterator certiter = certObject.entrySet().iterator();
+        X509Certificate[] chain=new X509Certificate[certObject.size()];
+        int j=0;
+        while(certiter.hasNext()){
+            Map.Entry entry = (Map.Entry) certiter.next();
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            byte[] certbcytes=Base64.getDecoder().decode(stringToBytes(entry.getValue().toString()));
+            Certificate cert = certFactory.generateCertificate(new ByteArrayInputStream(certbcytes));
+            chain[j]=(X509Certificate) cert;
+            j++;
+        }
+        List<X509Certificate> certificates= Arrays.asList(chain);
+        Certificate[] sortedChain=new Certificate[certificates.size()];
+        X509Certificate rootCert=findRootCert(certificates);
+        X509Certificate nextCert=rootCert;
+        for (int p=certificates.size()-1;p>=0;p--){
+            sortedChain[p]=nextCert;
+            nextCert=findSignedCert(nextCert,certificates);
+        }
+        Boolean certStatus=checkCertChain(sortedChain);
+        if (!certStatus){
+            System.out.println("证书链验证失败!!!");
+        }
+        final X509Certificate x509Certificate=(X509Certificate)sortedChain[0];
+
+        for (String s:encElements){
+//            System.out.println(s);
+            Element e=doc.selectFirst(s);
+            String originText=e.text();
+            System.out.println(originText);
+            String decryptedText=stringDecrypt(originText);
+            e.text(decryptedText);
+        }
+        for (String s:sigElements){
+//            System.out.println(s);
+            Element e=doc.selectFirst(s);
+            String originText=e.text();
+            System.out.println(originText);
+            Elements signValueElement=doc.select("div[id=signvalue+"+e.id()+"]");
+            String signValue=signValueElement.text();
+            boolean res=validate(originText,signValue,x509Certificate);
+            System.out.println(res);
+            if(!res){
+                checksign=false;
+            }
+            signValueElement.remove();
+        }
+        encKeyElement.remove();
+        certsElement.remove();
+        keyNameElement.remove();
+        System.out.println("验签结果为："+checksign);
+        return doc.toString();
     }
 }

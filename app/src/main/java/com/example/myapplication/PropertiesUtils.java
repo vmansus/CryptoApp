@@ -2,10 +2,15 @@ package com.example.myapplication;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.os.Environment;
 
 import org.bouncycastle.jcajce.provider.keystore.PKCS12;
+import org.dom4j.Document;
+import org.dom4j.io.SAXReader;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
@@ -14,8 +19,8 @@ import java.util.Properties;
 public class PropertiesUtils {
 
     //1、配置文件的位置在assets资源目录下
-    private final static String m_strPath = "appConfig.properties";
-    private final static String m_keystorePath = "ccc";
+//    private final static String m_strPath = "appConfig.properties";
+//    private final static String m_keystorePath = "ccc";
     //2、配置文件的位置在源代码根目录(src下)
     //private final static String m_strPath = "/global.properties";
 
@@ -28,7 +33,15 @@ public class PropertiesUtils {
             //InputStream in = c.getAssets().open("appConfig");
             //方法二：通过class获取setting.properties的FileInputStream
 //            InputStream in = PropertiesUtils.class.getResourceAsStream(m_strPath);
-            props.load(c.getAssets().open("appConfig.properties"));
+
+            File configFile=new File(Environment
+                    .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    + "/app.properties");
+            FileInputStream fin=new FileInputStream(configFile);
+            props.load(fin);
+            fin.close();
+
+//            props.load(c.getAssets().open("appConfig.properties"));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -58,6 +71,22 @@ public class PropertiesUtils {
 //            is.close();
         }
         return keyStore;
+    }
+
+
+    public static Document getHtmlConfig(Context c) throws Exception {
+//        InputStream is = null;
+//        is=c.getAssets().open("HtmlConfig.xml");
+
+//        File configFile=new File(Environment.DIRECTORY_DOWNLOADS,"HtmlConfig.xml");
+
+        File configFile=new File(Environment
+                .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                + "/HtmlConfig.xml");
+        FileInputStream is=new FileInputStream(configFile);
+        Document document = new SAXReader().read(is);
+        is.close();
+        return document;
     }
 
     /**

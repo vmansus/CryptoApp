@@ -2,11 +2,15 @@ package com.example.myapplication.smcipher;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.example.myapplication.CryptoConfigUtils;
 import com.example.myapplication.MyApplication;
 import com.example.myapplication.PropertiesUtils;
 import com.example.myapplication.gmhelper.SM2Util;
 import com.example.myapplication.gmhelper.SM4Util;
 import com.example.myapplication.gmhelper.cert.SM2X509CertMaker;
+import com.example.myapplication.streamcipher.BCZuc;
+import com.example.myapplication.streamcipher.RandomZucKeyGenerater;
+
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
@@ -15,6 +19,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
@@ -24,6 +30,7 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
+import java.util.Properties;
 
 public class JsonAsWholeEncUtils {
     static {
@@ -36,7 +43,7 @@ public class JsonAsWholeEncUtils {
     private static JsonAsWholeEncUtils instance=null;
     private Key keyEncryptKey=null;
 
-    public JsonAsWholeEncUtils(X509Certificate certificate) throws NoSuchProviderException, NoSuchAlgorithmException {
+    public JsonAsWholeEncUtils(X509Certificate certificate) throws NoSuchProviderException, NoSuchAlgorithmException, IOException {
         keyEncryptKey=certificate.getPublicKey();
     }
 
@@ -44,14 +51,25 @@ public class JsonAsWholeEncUtils {
         if (instance==null)return new JsonAsWholeEncUtils(certificate);
         else return instance;
     }
+    Properties pro = PropertiesUtils.getProperties(MyApplication.getContext());
+    int encalg= new CryptoConfigUtils().getEncAlg(pro);
     byte[] sm4key= SM4Util.generateKey();
+    String zuckey=new RandomZucKeyGenerater().makeKey();
 
-    public String stringEncrypt(String text) throws NoSuchPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, InvalidKeyException {
-        byte[] iv= Base64.getDecoder().decode(stringToBytes("LvbTKayS1A2NFFBjaPvkJg=="));
-        byte[] srcdata=text.getBytes();
-        byte[] cipherText= SM4Util.encrypt_CBC_Padding(sm4key,iv,srcdata);
-        String ss=bytesToString(Base64.getEncoder().encode(cipherText));
-        return ss;
+    public String stringEncrypt(String text) throws NoSuchPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, InvalidKeyException, UnsupportedEncodingException {
+        if (encalg==0){
+            byte[] iv=Base64.getDecoder().decode(stringToBytes("LvbTKayS1A2NFFBjaPvkJg=="));
+            byte[] srcdata=text.getBytes();
+            byte[] cipherText= SM4Util.encrypt_CBC_Padding(sm4key,iv,srcdata);
+            String ss=bytesToString(Base64.getEncoder().encode(cipherText));
+            return ss;
+        }else if(encalg==1){
+            String res=new BCZuc().stringEncCipher(text,zuckey);
+            return res;
+        }else {
+            System.out.println("请检查对称加密配置!!!");
+            return null;
+        }
     }
 
     public String stringSign(String text, String alias) throws Exception {
@@ -117,7 +135,14 @@ public class JsonAsWholeEncUtils {
         String encryptedJsonString=stringEncrypt(jsstr);
         String encryptkey = null;
         try {
-            encryptkey = Sm2Enc(sm4key,keyEncryptKey);
+            if (encalg == 0) {
+                encryptkey = Sm2Enc(sm4key,keyEncryptKey);
+            }else if(encalg==1){
+                byte[] zuckeybytes=stringToBytes(zuckey);
+                encryptkey=Sm2Enc(zuckeybytes,keyEncryptKey);
+            }else {
+                System.out.println("请检查对称加密配置!!!");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -144,7 +169,14 @@ public class JsonAsWholeEncUtils {
         String encryptedJsonString=stringEncrypt(json);
         String encryptkey = null;
         try {
-            encryptkey = Sm2Enc(sm4key,keyEncryptKey);
+            if (encalg == 0) {
+                encryptkey = Sm2Enc(sm4key,keyEncryptKey);
+            }else if(encalg==1){
+                byte[] zuckeybytes=stringToBytes(zuckey);
+                encryptkey=Sm2Enc(zuckeybytes,keyEncryptKey);
+            }else {
+                System.out.println("请检查对称加密配置!!!");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

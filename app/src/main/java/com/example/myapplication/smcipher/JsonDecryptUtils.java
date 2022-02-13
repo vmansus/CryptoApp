@@ -4,12 +4,14 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.JSONValidator;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.example.myapplication.CryptoConfigUtils;
 import com.example.myapplication.MyApplication;
 import com.example.myapplication.PropertiesUtils;
 import com.example.myapplication.gmhelper.SM2Util;
 import com.example.myapplication.gmhelper.SM4Util;
 import com.example.myapplication.gmhelper.cert.SM2CertUtil;
 import com.example.myapplication.gmhelper.cert.SM2X509CertMaker;
+import com.example.myapplication.streamcipher.BCZuc;
 
 //import com.example.myapplication.smcipher.sm4.SM4Utils;
 import lombok.var;
@@ -22,6 +24,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
@@ -58,7 +61,9 @@ public class JsonDecryptUtils {
 //    private static final String TEST_P12_FILENAME="C:\\Users\\20781\\AndroidStudioProjects\\MyApplication\\app\\src\\main\\res\\clientkeystore.p12";
 
 
-
+    Properties pro = PropertiesUtils.getProperties(MyApplication.getContext());
+    int encalg= new CryptoConfigUtils().getEncAlg(pro);
+    String zuckey=null;
     byte[] sm4key = null;
 
     // 需要加密的日志节点
@@ -68,6 +73,9 @@ public class JsonDecryptUtils {
     Map<String, List<String>> encryptNodeMap=nodeMap.reencNodeMap();
     List<String> signNodelist=nodeMap.resignlist();
     public Map<String, Object> signvaluemap=new HashMap<>();
+
+    public JsonDecryptUtils() throws IOException {
+    }
 
 
     public static byte[] Sm2Dec(String text, PrivateKey privateKey) throws InvalidCipherTextException {
@@ -162,7 +170,13 @@ public class JsonDecryptUtils {
                 byte[] thekey = null;
                 try {
                     thekey= Sm2Dec(encryptkey,privateKey);
-                    this.sm4key=thekey;
+                    if (encalg==0){
+                        this.sm4key=thekey;
+                    }else if(encalg==1){
+                        this.zuckey=bytesToString(thekey);
+                    }else {
+                        System.out.println("请检查对称加密配置!!!");
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -232,7 +246,13 @@ public class JsonDecryptUtils {
                 byte[] thekey = null;
                 try {
                     thekey= Sm2Dec(encryptkey,privateKey);
-                    this.sm4key=thekey;
+                    if (encalg==0){
+                        this.sm4key=thekey;
+                    }else if(encalg==1){
+                        this.zuckey=bytesToString(thekey);
+                    }else {
+                        System.out.println("请检查对称加密配置!!!");
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -380,11 +400,19 @@ public class JsonDecryptUtils {
      * @param text 入参
      * @return 解密字符串
      */
-    public String stringDecrypt(String text) throws BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException, NoSuchProviderException, InvalidKeyException {
-        byte[] cipherdata=stringToBytes(text);
-        byte[] iv=Base64.getDecoder().decode(stringToBytes("LvbTKayS1A2NFFBjaPvkJg=="));
-        byte[] decryptedData= SM4Util.decrypt_CBC_Padding(sm4key,iv,Base64.getDecoder().decode(cipherdata));
-        return bytesToString(decryptedData);
+    public String stringDecrypt(String text) throws BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException, NoSuchProviderException, InvalidKeyException, UnsupportedEncodingException {
+        if(encalg==0){
+            byte[] cipherdata=stringToBytes(text);
+            byte[] iv=Base64.getDecoder().decode(stringToBytes("LvbTKayS1A2NFFBjaPvkJg=="));
+            byte[] decryptedData= SM4Util.decrypt_CBC_Padding(sm4key,iv,Base64.getDecoder().decode(cipherdata));
+            return bytesToString(decryptedData);
+        }else if(encalg==1){
+            String res=new BCZuc().stringDecCipher(text,zuckey);
+            return res;
+        }else {
+            System.out.println("请检查对称加密配置!!!");
+            return null;
+        }
     }
 
     public static String removeCharAt(String s, int pos) {
@@ -398,7 +426,7 @@ public class JsonDecryptUtils {
      * @param nodeList 入参
      * @return 结果
      */
-    private Object GetAesJToken(Object object, List<String> nodeList) throws BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchProviderException, InvalidKeyException {
+    private Object GetAesJToken(Object object, List<String> nodeList) throws BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchProviderException, InvalidKeyException, UnsupportedEncodingException {
         // 如果为空，直接返回
         if (object == null || nodeList.size() == 0) return object;
         JSONObject jsonObject = null;
@@ -454,7 +482,7 @@ public class JsonDecryptUtils {
      * @param node   入参
      * @return 结果
      */
-    private Object AesNodeToJson(Object object, String node) throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchProviderException, InvalidAlgorithmParameterException {
+    private Object AesNodeToJson(Object object, String node) throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchProviderException, InvalidAlgorithmParameterException, UnsupportedEncodingException {
         if (object == null) return object;
         if (JSONValidator.from(object.toString()).getType()==JSONValidator.Type.Object
             // JSON.isValidObject(object.toString())
